@@ -1,0 +1,1441 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="data/__0.js"></script>
+        <script src="data/__1.js"></script>
+        <script src="data/__2.js"></script>
+        <script src="data/__3.js"></script>
+        <script src="data/__4.js"></script>
+        <script src="data/sheet_202604141_5.js"></script>
+        <script src="data/sheet_202604141_6.js"></script>
+        <script src="data/sheet_202604141_7.js"></script>
+        <script src="data/sheet_202604141_8.js"></script>
+        <script src="data/sheet_202604141_9.js"></script>
+        <script src="data/sheet_202604141_10.js"></script>
+        <script src="data/sheet_202604141_11.js"></script>
+        <script src="data/sheet_202604141_12.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:20, minZoom:5
+        }).fitBounds([[23.2070495647446,116.08016595903507],[23.77593607866355,117.07014996368406]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        function pop___0(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gb'] !== null ? autolinker.link(String(feature.properties['gb']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style___0_0() {
+            return {
+                pane: 'pane___0',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,228,189,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane___0');
+        map.getPane('pane___0').style.zIndex = 400;
+        map.getPane('pane___0').style['mix-blend-mode'] = 'normal';
+        var layer___0 = new L.geoJson(json___0, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json___0',
+            layerName: 'layer___0',
+            pane: 'pane___0',
+            onEachFeature: pop___0,
+            style: style___0_0,
+        });
+        bounds_group.addLayer(layer___0);
+        map.addLayer(layer___0);
+        function pop___1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gb'] !== null ? autolinker.link(String(feature.properties['gb']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style___1_0() {
+            return {
+                pane: 'pane___1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,228,189,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane___1');
+        map.getPane('pane___1').style.zIndex = 401;
+        map.getPane('pane___1').style['mix-blend-mode'] = 'normal';
+        var layer___1 = new L.geoJson(json___1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json___1',
+            layerName: 'layer___1',
+            pane: 'pane___1',
+            onEachFeature: pop___1,
+            style: style___1_0,
+        });
+        bounds_group.addLayer(layer___1);
+        map.addLayer(layer___1);
+        function pop___2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gb'] !== null ? autolinker.link(String(feature.properties['gb']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style___2_0() {
+            return {
+                pane: 'pane___2',
+                opacity: 1,
+                color: 'rgba(114,155,111,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane___2');
+        map.getPane('pane___2').style.zIndex = 402;
+        map.getPane('pane___2').style['mix-blend-mode'] = 'normal';
+        var layer___2 = new L.geoJson(json___2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json___2',
+            layerName: 'layer___2',
+            pane: 'pane___2',
+            onEachFeature: pop___2,
+            style: style___2_0,
+        });
+        bounds_group.addLayer(layer___2);
+        map.addLayer(layer___2);
+        function pop___3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">name</th>\
+                        <td>' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style___3_0() {
+            return {
+                pane: 'pane___3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,228,189,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane___3');
+        map.getPane('pane___3').style.zIndex = 403;
+        map.getPane('pane___3').style['mix-blend-mode'] = 'normal';
+        var layer___3 = new L.geoJson(json___3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json___3',
+            layerName: 'layer___3',
+            pane: 'pane___3',
+            onEachFeature: pop___3,
+            style: style___3_0,
+        });
+        bounds_group.addLayer(layer___3);
+        map.addLayer(layer___3);
+        function pop___4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">name</th>\
+                        <td>' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style___4_0() {
+            return {
+                pane: 'pane___4',
+                opacity: 1,
+                color: 'rgba(213,180,60,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane___4');
+        map.getPane('pane___4').style.zIndex = 404;
+        map.getPane('pane___4').style['mix-blend-mode'] = 'normal';
+        var layer___4 = new L.geoJson(json___4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json___4',
+            layerName: 'layer___4',
+            pane: 'pane___4',
+            onEachFeature: pop___4,
+            style: style___4_0,
+        });
+        bounds_group.addLayer(layer___4);
+        map.addLayer(layer___4);
+        function pop_sheet_202604141_5(feature, layer) {
+        }
+
+        function style_sheet_202604141_5_0(feature) {
+            switch(String(feature.properties['类型'])) {
+                case '宋代本土':
+                    return {
+                pane: 'pane_sheet_202604141_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,203,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '宋代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(153,239,140,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代本土':
+                    return {
+                pane: 'pane_sheet_202604141_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,158,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,81,67,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_sheet_202604141_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(147,125,207,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_sheet_202604141_5');
+        map.getPane('pane_sheet_202604141_5').style.zIndex = 405;
+        map.getPane('pane_sheet_202604141_5').style['mix-blend-mode'] = 'normal';
+        var layer_sheet_202604141_5 = new L.geoJson(json_sheet_202604141_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sheet_202604141_5',
+            layerName: 'layer_sheet_202604141_5',
+            pane: 'pane_sheet_202604141_5',
+            onEachFeature: pop_sheet_202604141_5,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sheet_202604141_5_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sheet_202604141_5);
+        map.addLayer(layer_sheet_202604141_5);
+        function pop_sheet_202604141_6(feature, layer) {
+        }
+
+        function style_sheet_202604141_6_0(feature) {
+            switch(String(feature.properties['类型'])) {
+                case '宋代本土':
+                    return {
+                pane: 'pane_sheet_202604141_6',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,203,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '宋代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_6',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(153,239,140,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代本土':
+                    return {
+                pane: 'pane_sheet_202604141_6',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,158,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_6',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,81,67,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_sheet_202604141_6',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(147,125,207,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_sheet_202604141_6');
+        map.getPane('pane_sheet_202604141_6').style.zIndex = 406;
+        map.getPane('pane_sheet_202604141_6').style['mix-blend-mode'] = 'normal';
+        var layer_sheet_202604141_6 = new L.geoJson(json_sheet_202604141_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sheet_202604141_6',
+            layerName: 'layer_sheet_202604141_6',
+            pane: 'pane_sheet_202604141_6',
+            onEachFeature: pop_sheet_202604141_6,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sheet_202604141_6_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sheet_202604141_6);
+        map.addLayer(layer_sheet_202604141_6);
+        function pop_sheet_202604141_7(feature, layer) {
+        }
+
+        function style_sheet_202604141_7_0(feature) {
+            switch(String(feature.properties['类型'])) {
+                case '宋代本土':
+                    return {
+                pane: 'pane_sheet_202604141_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,203,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '宋代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(153,239,140,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代本土':
+                    return {
+                pane: 'pane_sheet_202604141_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,158,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,81,67,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_sheet_202604141_7',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(147,125,207,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_sheet_202604141_7');
+        map.getPane('pane_sheet_202604141_7').style.zIndex = 407;
+        map.getPane('pane_sheet_202604141_7').style['mix-blend-mode'] = 'normal';
+        var layer_sheet_202604141_7 = new L.geoJson(json_sheet_202604141_7, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sheet_202604141_7',
+            layerName: 'layer_sheet_202604141_7',
+            pane: 'pane_sheet_202604141_7',
+            onEachFeature: pop_sheet_202604141_7,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sheet_202604141_7_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sheet_202604141_7);
+        map.addLayer(layer_sheet_202604141_7);
+        function pop_sheet_202604141_8(feature, layer) {
+        }
+
+        function style_sheet_202604141_8_0(feature) {
+            switch(String(feature.properties['类型'])) {
+                case '宋代本土':
+                    return {
+                pane: 'pane_sheet_202604141_8',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,203,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '宋代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_8',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(153,239,140,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代本土':
+                    return {
+                pane: 'pane_sheet_202604141_8',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,158,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_8',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,81,67,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_sheet_202604141_8',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(147,125,207,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_sheet_202604141_8');
+        map.getPane('pane_sheet_202604141_8').style.zIndex = 408;
+        map.getPane('pane_sheet_202604141_8').style['mix-blend-mode'] = 'normal';
+        var layer_sheet_202604141_8 = new L.geoJson(json_sheet_202604141_8, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sheet_202604141_8',
+            layerName: 'layer_sheet_202604141_8',
+            pane: 'pane_sheet_202604141_8',
+            onEachFeature: pop_sheet_202604141_8,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sheet_202604141_8_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sheet_202604141_8);
+        map.addLayer(layer_sheet_202604141_8);
+        function pop_sheet_202604141_9(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">姓名</th>\
+                        <td>' + (feature.properties['姓名'] !== null ? autolinker.link(String(feature.properties['姓名']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">类型</th>\
+                        <td>' + (feature.properties['类型'] !== null ? autolinker.link(String(feature.properties['类型']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_sheet_202604141_9_0(feature) {
+            switch(String(feature.properties['类型'])) {
+                case '宋代本土':
+                    return {
+                pane: 'pane_sheet_202604141_9',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,203,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '宋代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_9',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(153,239,140,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代本土':
+                    return {
+                pane: 'pane_sheet_202604141_9',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,158,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_9',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,81,67,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_sheet_202604141_9',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(106,200,75,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_sheet_202604141_9');
+        map.getPane('pane_sheet_202604141_9').style.zIndex = 409;
+        map.getPane('pane_sheet_202604141_9').style['mix-blend-mode'] = 'normal';
+        var layer_sheet_202604141_9 = new L.geoJson(json_sheet_202604141_9, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sheet_202604141_9',
+            layerName: 'layer_sheet_202604141_9',
+            pane: 'pane_sheet_202604141_9',
+            onEachFeature: pop_sheet_202604141_9,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sheet_202604141_9_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sheet_202604141_9);
+        map.addLayer(layer_sheet_202604141_9);
+        function pop_sheet_202604141_10(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">姓名</th>\
+                        <td>' + (feature.properties['姓名'] !== null ? autolinker.link(String(feature.properties['姓名']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">类型</th>\
+                        <td>' + (feature.properties['类型'] !== null ? autolinker.link(String(feature.properties['类型']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td class="visible-with-data" id="纬度" colspan="2"><strong>纬度</strong><br />' + (feature.properties['纬度'] !== null ? autolinker.link(String(feature.properties['纬度']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_sheet_202604141_10_0(feature) {
+            switch(String(feature.properties['类型'])) {
+                case '宋代本土':
+                    return {
+                pane: 'pane_sheet_202604141_10',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,203,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '宋代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_10',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(153,239,140,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代本土':
+                    return {
+                pane: 'pane_sheet_202604141_10',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,158,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_10',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,81,67,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_sheet_202604141_10',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(106,200,75,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_sheet_202604141_10');
+        map.getPane('pane_sheet_202604141_10').style.zIndex = 410;
+        map.getPane('pane_sheet_202604141_10').style['mix-blend-mode'] = 'normal';
+        var layer_sheet_202604141_10 = new L.geoJson(json_sheet_202604141_10, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sheet_202604141_10',
+            layerName: 'layer_sheet_202604141_10',
+            pane: 'pane_sheet_202604141_10',
+            onEachFeature: pop_sheet_202604141_10,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sheet_202604141_10_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sheet_202604141_10);
+        map.addLayer(layer_sheet_202604141_10);
+        function pop_sheet_202604141_11(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">姓名</th>\
+                        <td>' + (feature.properties['姓名'] !== null ? autolinker.link(String(feature.properties['姓名']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">类型</th>\
+                        <td>' + (feature.properties['类型'] !== null ? autolinker.link(String(feature.properties['类型']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_sheet_202604141_11_0(feature) {
+            switch(String(feature.properties['类型'])) {
+                case '宋代本土':
+                    return {
+                pane: 'pane_sheet_202604141_11',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,203,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '宋代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_11',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(153,239,140,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代本土':
+                    return {
+                pane: 'pane_sheet_202604141_11',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,158,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_11',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,81,67,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_sheet_202604141_11',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(106,200,75,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_sheet_202604141_11');
+        map.getPane('pane_sheet_202604141_11').style.zIndex = 411;
+        map.getPane('pane_sheet_202604141_11').style['mix-blend-mode'] = 'normal';
+        var layer_sheet_202604141_11 = new L.geoJson(json_sheet_202604141_11, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sheet_202604141_11',
+            layerName: 'layer_sheet_202604141_11',
+            pane: 'pane_sheet_202604141_11',
+            onEachFeature: pop_sheet_202604141_11,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sheet_202604141_11_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sheet_202604141_11);
+        map.addLayer(layer_sheet_202604141_11);
+        function pop_sheet_202604141_12(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">姓名</th>\
+                        <td>' + (feature.properties['姓名'] !== null ? autolinker.link(String(feature.properties['姓名']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">类型</th>\
+                        <td>' + (feature.properties['类型'] !== null ? autolinker.link(String(feature.properties['类型']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_sheet_202604141_12_0(feature) {
+            switch(String(feature.properties['类型'])) {
+                case '宋代本土':
+                    return {
+                pane: 'pane_sheet_202604141_12',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,203,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '宋代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_12',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(153,239,140,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代本土':
+                    return {
+                pane: 'pane_sheet_202604141_12',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,158,78,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '唐代寓潮':
+                    return {
+                pane: 'pane_sheet_202604141_12',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,81,67,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_sheet_202604141_12',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(106,200,75,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_sheet_202604141_12');
+        map.getPane('pane_sheet_202604141_12').style.zIndex = 412;
+        map.getPane('pane_sheet_202604141_12').style['mix-blend-mode'] = 'normal';
+        var layer_sheet_202604141_12 = new L.geoJson(json_sheet_202604141_12, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_sheet_202604141_12',
+            layerName: 'layer_sheet_202604141_12',
+            pane: 'pane_sheet_202604141_12',
+            onEachFeature: pop_sheet_202604141_12,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_sheet_202604141_12_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_sheet_202604141_12);
+        map.addLayer(layer_sheet_202604141_12);
+        var overlaysTree = [
+            {label: 'sheet_20260414(1)<br /><table><tr><td style="text-align: center;"><img src="legend/sheet_202604141_12_宋代本土0.png" /></td><td>宋代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_12_宋代寓潮1.png" /></td><td>宋代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_12_唐代本土2.png" /></td><td>唐代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_12_唐代寓潮3.png" /></td><td>唐代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_12_4.png" /></td><td></td></tr></table>', layer: layer_sheet_202604141_12},
+            {label: 'sheet_20260414(1)<br /><table><tr><td style="text-align: center;"><img src="legend/sheet_202604141_11_宋代本土0.png" /></td><td>宋代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_11_宋代寓潮1.png" /></td><td>宋代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_11_唐代本土2.png" /></td><td>唐代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_11_唐代寓潮3.png" /></td><td>唐代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_11_4.png" /></td><td></td></tr></table>', layer: layer_sheet_202604141_11},
+            {label: 'sheet_20260414(1)<br /><table><tr><td style="text-align: center;"><img src="legend/sheet_202604141_10_宋代本土0.png" /></td><td>宋代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_10_宋代寓潮1.png" /></td><td>宋代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_10_唐代本土2.png" /></td><td>唐代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_10_唐代寓潮3.png" /></td><td>唐代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_10_4.png" /></td><td></td></tr></table>', layer: layer_sheet_202604141_10},
+            {label: 'sheet_20260414(1)<br /><table><tr><td style="text-align: center;"><img src="legend/sheet_202604141_9_宋代本土0.png" /></td><td>宋代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_9_宋代寓潮1.png" /></td><td>宋代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_9_唐代本土2.png" /></td><td>唐代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_9_唐代寓潮3.png" /></td><td>唐代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_9_4.png" /></td><td></td></tr></table>', layer: layer_sheet_202604141_9},
+            {label: 'sheet_20260414(1)<br /><table><tr><td style="text-align: center;"><img src="legend/sheet_202604141_8_宋代本土0.png" /></td><td>宋代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_8_宋代寓潮1.png" /></td><td>宋代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_8_唐代本土2.png" /></td><td>唐代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_8_唐代寓潮3.png" /></td><td>唐代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_8_4.png" /></td><td></td></tr></table>', layer: layer_sheet_202604141_8},
+            {label: 'sheet_20260414(1)  复制<br /><table><tr><td style="text-align: center;"><img src="legend/sheet_202604141_7_宋代本土0.png" /></td><td>宋代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_7_宋代寓潮1.png" /></td><td>宋代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_7_唐代本土2.png" /></td><td>唐代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_7_唐代寓潮3.png" /></td><td>唐代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_7_4.png" /></td><td></td></tr></table>', layer: layer_sheet_202604141_7},
+            {label: 'sheet_20260414(1)  复制<br /><table><tr><td style="text-align: center;"><img src="legend/sheet_202604141_6_宋代本土0.png" /></td><td>宋代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_6_宋代寓潮1.png" /></td><td>宋代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_6_唐代本土2.png" /></td><td>唐代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_6_唐代寓潮3.png" /></td><td>唐代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_6_4.png" /></td><td></td></tr></table>', layer: layer_sheet_202604141_6},
+            {label: 'sheet_20260414(1)  复制  复制<br /><table><tr><td style="text-align: center;"><img src="legend/sheet_202604141_5_宋代本土0.png" /></td><td>宋代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_5_宋代寓潮1.png" /></td><td>宋代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_5_唐代本土2.png" /></td><td>唐代本土</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_5_唐代寓潮3.png" /></td><td>唐代寓潮</td></tr><tr><td style="text-align: center;"><img src="legend/sheet_202604141_5_4.png" /></td><td></td></tr></table>', layer: layer_sheet_202604141_5},
+            {label: '<img src="legend/__4.png" /> 中国_县', layer: layer___4},
+            {label: '<img src="legend/__3.png" /> 中国_县', layer: layer___3},
+            {label: '<img src="legend/__2.png" /> 中国_市', layer: layer___2},
+            {label: '<img src="legend/__1.png" /> 中国_市', layer: layer___1},
+            {label: '<img src="legend/__0.png" /> 中国_省', layer: layer___0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        var i = 0;
+        layer___0.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['name'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Palatino Linotype\', sans-serif;">' + layer.feature.properties['name']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css___0'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer___1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['name'] !== null?String('<div style="color: #323232; font-size: 16pt; font-family: \'HYZhongHei\', sans-serif;">' + layer.feature.properties['name']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css___1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer___3.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['name'] !== null?String('<div style="color: #323232; font-size: 8pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['name']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css___3'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_sheet_202604141_5.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['姓名'] !== null?String('<div style="color: #762a24; font-size: 8pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['姓名']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_sheet_202604141_5'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_sheet_202604141_6.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['姓名'] !== null?String('<div style="color: #77521d; font-size: 8pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['姓名']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_sheet_202604141_6'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_sheet_202604141_7.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['姓名'] !== null?String('<div style="color: #536537; font-size: 9pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['姓名']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_sheet_202604141_7'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_sheet_202604141_8.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['姓名'] !== null?String('<div style="color: #2c4278; font-size: 8pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['姓名']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_sheet_202604141_8'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_sheet_202604141_9.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['姓名'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['姓名']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_sheet_202604141_9'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_sheet_202604141_10.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['姓名'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['姓名']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_sheet_202604141_10'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_sheet_202604141_11.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['姓名'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['姓名']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_sheet_202604141_11'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_sheet_202604141_12.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['姓名'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['姓名']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_sheet_202604141_12'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        resetLabels([layer___0,layer___1,layer___3,layer_sheet_202604141_5,layer_sheet_202604141_6,layer_sheet_202604141_7,layer_sheet_202604141_8,layer_sheet_202604141_9,layer_sheet_202604141_10,layer_sheet_202604141_11,layer_sheet_202604141_12]);
+        map.on("zoomend", function(){
+            resetLabels([layer___0,layer___1,layer___3,layer_sheet_202604141_5,layer_sheet_202604141_6,layer_sheet_202604141_7,layer_sheet_202604141_8,layer_sheet_202604141_9,layer_sheet_202604141_10,layer_sheet_202604141_11,layer_sheet_202604141_12]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer___0,layer___1,layer___3,layer_sheet_202604141_5,layer_sheet_202604141_6,layer_sheet_202604141_7,layer_sheet_202604141_8,layer_sheet_202604141_9,layer_sheet_202604141_10,layer_sheet_202604141_11,layer_sheet_202604141_12]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer___0,layer___1,layer___3,layer_sheet_202604141_5,layer_sheet_202604141_6,layer_sheet_202604141_7,layer_sheet_202604141_8,layer_sheet_202604141_9,layer_sheet_202604141_10,layer_sheet_202604141_11,layer_sheet_202604141_12]);
+        });
+        </script>        
+    </body>
+</html>
